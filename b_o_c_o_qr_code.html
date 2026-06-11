@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo: Công Nghệ QR Code Trong Thanh Toán Điện Tử</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system','BlinkMacSystemFont','Segoe UI','Roboto','sans-serif'],
+                        serif: ['Playfair Display','serif'],
+                        mono: ['DM Mono','monospace'],
+                    },
+                    colors: {
+                        forest: { dark:'#020617', deep:'#064e3b', mid:'#047857', light:'#10b981', neon:'#34d399' },
+                        moon: { glow:'#fef08a', core:'#ffffff', aura:'#fef9c3' }
+                    },
+                    animation: {
+                        'moon-rise': 'moonRise 3s cubic-bezier(0.2,0.8,0.2,1) forwards',
+                        'light-spread': 'lightSpread 4s ease forwards',
+                        'firefly': 'firefly 8s ease-in-out infinite alternate',
+                        'reveal-up': 'revealUp 1s cubic-bezier(0.16,1,0.3,1) forwards',
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        moonRise: { '0%':{transform:'translateY(100px) scale(0.8)',opacity:'0',filter:'blur(20px)'},'100%':{transform:'translateY(0) scale(1)',opacity:'1',filter:'blur(0px)'} },
+                        lightSpread: { '0%':{opacity:'0',transform:'scale(0.5)'},'100%':{opacity:'1',transform:'scale(1.5)'} },
+                        firefly: { '0%':{transform:'translate(0,0) scale(1)',opacity:'0.2'},'50%':{transform:'translate(50px,-50px) scale(1.5)',opacity:'0.8'},'100%':{transform:'translate(-30px,-80px) scale(0.8)',opacity:'0.1'} },
+                        revealUp: { '0%':{opacity:'0',transform:'translateY(50px) scale(0.95)'},'100%':{opacity:'1',transform:'translateY(0) scale(1)'} },
+                        float: { '0%':{transform:'translateY(0px)'},'50%':{transform:'translateY(-10px)'},'100%':{transform:'translateY(0px)'} }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color:#020617; color:#f8fafc; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+        #intro-overlay { position:fixed;inset:0;z-index:9999;background:#000;display:flex;justify-content:center;align-items:center;transition:opacity 2s ease-in-out;pointer-events:none; }
+        .ios-glass { background:rgba(15,23,42,0.4);backdrop-filter:blur(30px) saturate(150%);-webkit-backdrop-filter:blur(30px) saturate(150%);border:1px solid rgba(255,255,255,0.1);box-shadow:0 20px 40px -10px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1);transition:all 0.4s cubic-bezier(0.2,0.8,0.2,1); }
+        .ios-glass:hover { background:rgba(30,41,59,0.5);border-color:rgba(52,211,153,0.3);box-shadow:0 30px 60px -15px rgba(16,185,129,0.3),inset 0 1px 0 rgba(255,255,255,0.2);transform:translateY(-4px) scale(1.01); }
+        .ios-btn { position:relative;overflow:hidden;transition:transform 0.2s cubic-bezier(0.2,0.8,0.2,1),box-shadow 0.2s; }
+        .ios-btn:active { transform:scale(0.96); }
+        .ios-btn::after { content:'';position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,0.2),transparent);opacity:0;transition:opacity 0.3s; }
+        .ios-btn:hover::after { opacity:1; }
+        .text-gradient-moon { background:linear-gradient(135deg,#fef08a,#ffffff,#a7f3d0);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+        .text-gradient-forest { background:linear-gradient(135deg,#34d399,#0ea5e9);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+        .text-gradient-amber { background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+        .hero-scene { position:relative;width:100vw;height:100vh;overflow:hidden;perspective:1200px;background:radial-gradient(circle at center 60%,#064e3b 0%,#020617 70%); }
+        .moon-orb { position:absolute;top:15%;left:50%;margin-left:-100px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffffff,#fef08a,transparent);box-shadow:0 0 150px 50px rgba(254,240,138,0.4),0 0 300px 100px rgba(52,211,153,0.2);z-index:1;opacity:0; }
+        .light-beam { position:absolute;top:25%;left:50%;transform:translateX(-50%);width:150vw;height:100vh;background:radial-gradient(ellipse at top,rgba(254,240,138,0.15) 0%,transparent 70%);z-index:2;pointer-events:none;opacity:0;mix-blend-mode:screen; }
+        .parallax-layer { position:absolute;bottom:-5%;width:110vw;left:-5vw;display:flex;justify-content:center;align-items:flex-end;transform-style:preserve-3d;will-change:transform; }
+        .svg-tree { transform-origin:bottom center; }
+        .layer-bg { z-index:3;transform:translateZ(-400px) scale(1.5);filter:blur(4px) brightness(0.3); }
+        .layer-mid { z-index:4;transform:translateZ(-200px) scale(1.2);filter:blur(2px) brightness(0.5); }
+        .layer-front { z-index:5;transform:translateZ(0) scale(1);filter:drop-shadow(0 20px 30px rgba(0,0,0,0.8)); }
+        .firefly { position:absolute;border-radius:50%;background:#fef08a;box-shadow:0 0 10px 2px #fef08a;z-index:6;pointer-events:none; }
+        #scroll-progress { position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#34d399,#fef08a);z-index:1000;width:0%;box-shadow:0 0 10px rgba(52,211,153,0.5); }
+        .reveal-node { opacity:0;visibility:hidden; }
+        .reveal-node.active { opacity:1;visibility:visible;animation:revealUp 0.8s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .premium-table { width:100%;border-collapse:separate;border-spacing:0; }
+        .premium-table th { background:rgba(255,255,255,0.03);color:#94a3b8;padding:14px 18px;text-align:left;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid rgba(255,255,255,0.1); }
+        .premium-table td { padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.05);transition:all 0.3s ease;color:#f8fafc;font-size:0.9rem; }
+        .premium-table tr:hover td { background:rgba(52,211,153,0.05);color:#34d399; }
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:#020617; }
+        ::-webkit-scrollbar-thumb { background:#1e293b;border-radius:10px; }
+        ::-webkit-scrollbar-thumb:hover { background:#34d399; }
+        .progress-bar { height:6px;border-radius:99px;background:rgba(255,255,255,0.08);overflow:hidden; }
+        .progress-fill { height:100%;border-radius:99px;transition:width 2s cubic-bezier(0.16,1,0.3,1); }
+        .section-divider { border:none;border-top:1px solid rgba(255,255,255,0.06);margin:0; }
+        
+        .timeline-step { position: relative; padding-left: 2rem; border-left: 2px solid rgba(255,255,255,0.1); padding-bottom: 2rem; }
+        .timeline-step::before { content: ''; position: absolute; left: -0.4rem; top: 0; width: 0.8rem; height: 0.8rem; border-radius: 50%; background: #34d399; box-shadow: 0 0 10px #34d399; }
+        .timeline-step:last-child { border-left-color: transparent; padding-bottom: 0; }
+    </style>
+</head>
+<body class="selection:bg-forest-neon selection:text-forest-dark">
+
+<div id="intro-overlay"></div>
+<div id="scroll-progress"></div>
+
+<!-- NAV -->
+<nav id="navbar" class="fixed w-full z-50 transition-all duration-500 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="ios-glass rounded-[2rem] px-4 md:px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-forest-neon to-forest-mid flex items-center justify-center shadow-[0_0_15px_rgba(52,211,153,0.4)]">
+                    <i class="fa-solid fa-qrcode text-forest-dark text-lg"></i>
+                </div>
+                <span class="font-serif font-bold text-xl text-white">QR<span class="text-forest-neon">Tech</span></span>
+            </div>
+            <div class="hidden lg:flex space-x-1">
+                <a href="#phan-1" class="px-3 py-2 rounded-full text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">1. Mở Đầu</a>
+                <a href="#phan-2" class="px-3 py-2 rounded-full text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">2. Cấu Trúc Kỹ Thuật</a>
+                <a href="#phan-3" class="px-3 py-2 rounded-full text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">3. Vận Hành</a>
+                <a href="#phan-4" class="px-3 py-2 rounded-full text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">4. Sinh Mã</a>
+                <a href="#phan-5" class="px-3 py-2 rounded-full text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all">5. Đánh Giá</a>
+            </div>
+            <a href="#phan-1" class="ios-btn bg-white text-forest-dark px-5 py-2 rounded-full text-sm font-bold shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] hidden sm:flex items-center gap-2">
+                <i class="fa-solid fa-bolt"></i> Bắt Đầu
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero-scene" id="hero-parallax">
+    <div class="moon-orb animate-moon-rise" id="moon"></div>
+    <div class="light-beam animate-light-spread"></div>
+    <div class="parallax-layer layer-bg" data-speed="0.02">
+        <svg class="svg-tree opacity-40 mx-[-20px]" width="200" height="600" viewBox="0 0 100 300"><path d="M50 0 L100 150 L80 150 L100 250 L0 250 L20 150 L0 150 Z" fill="#022c22"/></svg>
+        <svg class="svg-tree opacity-50 mx-[-20px]" width="250" height="700" viewBox="0 0 100 300"><path d="M50 0 L100 150 L80 150 L100 250 L0 250 L20 150 L0 150 Z" fill="#064e3b"/></svg>
+        <svg class="svg-tree opacity-40 mx-[-20px]" width="180" height="550" viewBox="0 0 100 300"><path d="M50 0 L100 150 L80 150 L100 250 L0 250 L20 150 L0 150 Z" fill="#022c22"/></svg>
+    </div>
+    <div class="parallax-layer layer-mid" data-speed="0.06">
+        <svg class="svg-tree mx-[30px]" width="300" height="400" viewBox="0 0 200 300"><path d="M100 20 C150 20 180 80 180 140 C180 200 130 250 100 250 C70 250 20 200 20 140 C20 80 50 20 100 20 Z" fill="#065f46"/><path d="M90 240 L110 240 L105 350 L95 350 Z" fill="#1e293b"/></svg>
+    </div>
+    <div class="parallax-layer layer-front" data-speed="0.12">
+        <svg class="svg-tree absolute right-[-10%]" width="700" height="900" viewBox="0 0 200 300"><defs><radialGradient id="gfr" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#064e3b"/></radialGradient></defs><path d="M100 0 Q180 80 180 180 Q100 240 20 180 Q20 80 100 0 Z" fill="url(#gfr)"/><path d="M100 100 Q160 160 160 220 Q100 250 40 220 Q40 160 100 100 Z" fill="#10b981"/><path d="M85 220 L115 220 L110 400 L90 400 Z" fill="#020617"/></svg>
+    </div>
+    <div id="fireflies-container" class="absolute inset-0 z-10 pointer-events-none"></div>
+    <div class="absolute inset-0 z-30 flex flex-col justify-center items-center text-center px-4" style="background:radial-gradient(circle at center,transparent 0%,rgba(2,6,23,0.6) 100%);">
+        <div class="animate-reveal-up" style="animation-delay:1.5s;opacity:0;">
+            <div class="inline-flex items-center gap-2 ios-glass px-5 py-2 rounded-full mb-8 border-white/20">
+                <i class="fa-solid fa-star text-moon-glow text-xs animate-pulse"></i>
+                <span class="text-xs font-bold tracking-[0.2em] text-white uppercase font-mono">Bài Luận Công Nghệ Thanh Toán</span>
+            </div>
+            <h1 class="text-4xl md:text-6xl lg:text-[5rem] font-serif font-bold text-white leading-[1.2] mb-6 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">
+                Công Nghệ <span class="text-gradient-moon">QR Code</span><br>
+                <span class="text-3xl md:text-4xl font-medium italic text-slate-300">Từ Lý Luận Đến Thực Tiễn</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-10 font-light leading-relaxed drop-shadow-md">
+                Giải mã công nghệ đóng vai trò <strong class="text-forest-neon">"cầu nối"</strong> giữa thế giới vật lý và không gian số trong kỷ nguyên thanh toán điện tử hiện đại.
+            </p>
+            <a href="#overview-kpi" class="ios-btn bg-white/10 backdrop-blur-md border border-white/20 text-white px-8 py-4 rounded-full font-bold shadow-[0_0_30px_rgba(52,211,153,0.2)] hover:bg-white hover:text-forest-dark transition-all transform hover:scale-105 inline-flex items-center gap-3">
+                Xem Tổng Quan <i class="fa-solid fa-arrow-down animate-bounce"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- KPI OVERVIEW -->
+<section id="overview-kpi" class="relative z-40 -mt-20 pb-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="ios-glass p-7 rounded-[2rem] reveal-node group">
+                <div class="w-12 h-12 bg-gradient-to-br from-forest-neon to-forest-mid rounded-2xl flex items-center justify-center text-white text-xl mb-5 shadow-[0_0_20px_rgba(52,211,153,0.4)] group-hover:scale-110 transition-transform"><i class="fa-solid fa-database"></i></div>
+                <p class="text-xs text-slate-500 font-mono tracking-widest uppercase mb-1">Dung lượng mã hóa số</p>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <h3 class="text-4xl font-sans font-black text-white counter" data-target="7089">0</h3>
+                    <span class="text-sm text-slate-400">Ký tự</span>
+                </div>
+                <div class="h-px w-full bg-white/10 my-3"></div>
+                <p class="text-xs text-forest-neon font-medium"><i class="fa-solid fa-chart-line mr-1"></i> Gấp hàng trăm lần mã 1D</p>
+            </div>
+            <div class="ios-glass p-7 rounded-[2rem] reveal-node group" style="animation-delay:0.1s">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-white text-xl mb-5 shadow-[0_0_20px_rgba(96,165,250,0.4)] group-hover:scale-110 transition-transform"><i class="fa-solid fa-shield-halved"></i></div>
+                <p class="text-xs text-slate-500 font-mono tracking-widest uppercase mb-1">Cấp độ sửa lỗi tối đa (H)</p>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <h3 class="text-4xl font-sans font-black text-white counter" data-target="30">0</h3>
+                    <span class="text-sm text-slate-400">%</span>
+                </div>
+                <div class="h-px w-full bg-white/10 my-3"></div>
+                <p class="text-xs text-blue-400 font-medium"><i class="fa-solid fa-wrench mr-1"></i> Phục hồi dữ liệu bị mất</p>
+            </div>
+            <div class="ios-glass p-7 rounded-[2rem] reveal-node group" style="animation-delay:0.2s">
+                <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center text-white text-xl mb-5 shadow-[0_0_20px_rgba(251,191,36,0.4)] group-hover:scale-110 transition-transform"><i class="fa-solid fa-stopwatch"></i></div>
+                <p class="text-xs text-slate-500 font-mono tracking-widest uppercase mb-1">Thời gian xử lý giao dịch</p>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <h3 class="text-4xl font-sans font-black text-white counter" data-target="3">0</h3>
+                    <span class="text-sm text-slate-400">Giây</span>
+                </div>
+                <div class="h-px w-full bg-white/10 my-3"></div>
+                <p class="text-xs text-amber-400 font-medium"><i class="fa-solid fa-bolt mr-1"></i> Chuỗi thời gian thực (Real-time)</p>
+            </div>
+            <div class="ios-glass p-7 rounded-[2rem] reveal-node group" style="animation-delay:0.3s">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center text-white text-xl mb-5 shadow-[0_0_20px_rgba(168,85,247,0.4)] group-hover:scale-110 transition-transform"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                <p class="text-xs text-slate-500 font-mono tracking-widest uppercase mb-1">Chi phí đầu tư triển khai</p>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <h3 class="text-4xl font-sans font-black text-white">~ 0đ</h3>
+                </div>
+                <div class="h-px w-full bg-white/10 my-3"></div>
+                <p class="text-xs text-purple-400 font-medium"><i class="fa-solid fa-print mr-1"></i> So với máy quẹt thẻ POS (EMV)</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== PHẦN 1: MỞ ĐẦU ===== -->
+<section id="phan-1" class="py-24 relative z-20 border-t border-white/5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 reveal-node">
+            <span class="text-forest-neon font-mono tracking-[0.2em] uppercase text-xs border border-forest-neon/30 px-4 py-1.5 rounded-full bg-forest-neon/10">PHẦN 1: MỞ ĐẦU</span>
+            <h2 class="text-4xl md:text-5xl font-serif font-bold text-white mt-6 mb-4">Sự Bùng Nổ Của <span class="text-gradient-forest">Thanh Toán Số</span></h2>
+            <p class="text-slate-400 max-w-2xl mx-auto text-lg">Cách mạng công nghiệp lần thứ tư đã tái định hình toàn bộ nền kinh tế toàn cầu, đặc biệt trong lĩnh vực tài chính - ngân hàng.</p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-10 reveal-node">
+            <div class="ios-glass p-8 rounded-3xl">
+                <h4 class="text-2xl font-bold text-white mb-4 font-serif border-b border-white/10 pb-4"><i class="fa-solid fa-wallet text-blue-400 mr-2"></i> Làn sóng thanh toán không tiền mặt</h4>
+                <p class="text-slate-300 leading-relaxed mb-4">Xu hướng <strong>Cashless payment</strong> không còn là một lựa chọn mang tính công nghệ, mà đã trở thành tiêu chuẩn bắt buộc cho nền kinh tế hiện đại.</p>
+                <p class="text-slate-300 leading-relaxed">Tại Việt Nam, sự phổ cập của điện thoại thông minh cùng hạ tầng Internet băng thông rộng đã tạo tiền đề cho các phương thức thanh toán số phát triển với <strong>tốc độ phi mã</strong>.</p>
+            </div>
+            <div class="ios-glass p-8 rounded-3xl bg-gradient-to-br from-forest-neon/5 to-blue-900/10 relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 opacity-10">
+                    <i class="fa-solid fa-bridge text-9xl"></i>
+                </div>
+                <h4 class="text-2xl font-bold text-white mb-4 font-serif border-b border-white/10 pb-4 relative z-10"><i class="fa-solid fa-qrcode text-forest-neon mr-2"></i> Vị thế dẫn dắt thị trường</h4>
+                <p class="text-slate-300 leading-relaxed mb-4 relative z-10">Giữa các giải pháp như quẹt thẻ chip (EMV), NFC hay ví điện tử, QR Code vươn lên dẫn dắt nhờ tính đơn giản, chi phí triển khai gần như bằng không.</p>
+                <p class="text-slate-300 leading-relaxed relative z-10">QR Code hoạt động như một <strong class="text-white">"cầu nối" hoàn hảo</strong>, dịch chuyển thông tin tức thời từ thế giới vật lý (bảng in, màn hình) vào không gian số (ứng dụng ngân hàng).</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ===== PHẦN 2: CƠ SỞ KÝ THUẬT ===== -->
+<section id="phan-2" class="py-24 relative bg-[#020617]">
+    <div class="absolute inset-0 bg-gradient-to-b from-[#020617] via-[#064e3b]/20 to-[#020617]"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+        <div class="text-center mb-16 reveal-node">
+            <span class="text-amber-500 font-mono tracking-[0.2em] uppercase text-xs border border-amber-500/30 px-4 py-1.5 rounded-full bg-amber-500/10">PHẦN 2: LÝ LUẬN & KỸ THUẬT</span>
+            <h2 class="text-4xl md:text-5xl font-serif font-bold text-white mt-6 mb-4">Kiến Trúc <span class="text-gradient-amber">Hình Học & Sửa Lỗi</span></h2>
+            <p class="text-slate-400 max-w-2xl mx-auto text-lg">Từ phát minh năm 1994 của Masahiro Hara (Nhật Bản) đến sự tiến hóa từ mã vạch 1D thành ma trận 2D.</p>
+        </div>
+
+        <!-- So sánh 1D vs 2D -->
+        <div class="ios-glass p-8 rounded-3xl mb-12 reveal-node border-l-4 border-l-amber-500 flex flex-col md:flex-row gap-8 items-center">
+            <div class="md:w-1/2">
+                <h4 class="text-xl font-bold text-white mb-3 font-serif">Sự tiến hóa từ mã vạch 1D</h4>
+                <p class="text-sm text-slate-300 leading-relaxed mb-4">Trước khi có QR Code, mã vạch truyền thống (1D) chỉ lưu dữ liệu theo một chiều ngang, dung lượng tối đa khoảng 20 ký tự, buộc hệ thống phải liên tục truy vấn CSDL gốc.</p>
+                <p class="text-sm text-slate-300 leading-relaxed">Mã QR là mã <strong>ma trận hai chiều (2D Matrix Code)</strong>, lưu thông tin theo cả chiều ngang và dọc, tăng dung lượng lên gấp hàng trăm lần.</p>
+                <ul class="text-sm text-amber-400 font-mono mt-4 space-y-1">
+                    <li>+ Tối đa 7.089 ký tự số.</li>
+                    <li>+ Tối đa 4.296 ký tự chữ và số.</li>
+                    <li>+ Tối đa 2.953 byte dữ liệu nhị phân.</li>
+                </ul>
+            </div>
+            <div class="md:w-1/2 w-full grid grid-cols-2 gap-4">
+                <div class="bg-black/40 p-5 rounded-xl border border-white/5 text-center flex flex-col items-center justify-center">
+                    <div class="mb-3 tracking-widest text-white/50 text-2xl font-black">|| | ||| | || |</div>
+                    <p class="text-white font-bold text-sm">Mã vạch 1D</p>
+                    <p class="text-xs text-slate-400 mt-1">Chỉ quét ngang<br>(Dung lượng thấp)</p>
+                </div>
+                <div class="bg-amber-500/10 p-5 rounded-xl border border-amber-500/30 text-center shadow-[0_0_15px_rgba(251,191,36,0.1)] flex flex-col items-center justify-center">
+                    <div class="mb-3 text-amber-400 text-lg font-mono leading-none">
+                        ■ ■ ■ ■ ■ ■ ■<br>
+                        ■ &nbsp; &nbsp; &nbsp; ■<br>
+                        ■ &nbsp; ■ ■ ■ &nbsp; ■<br>
+                        ■ ■ ■ ■ ■ ■ ■
+                    </div>
+                    <p class="text-white font-bold text-sm">Mã QR 2D</p>
+                    <p class="text-xs text-amber-400 mt-1">Quét ngang & dọc<br>(Dung lượng cao)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hình học & Reed Solomon -->
+        <div class="grid lg:grid-cols-2 gap-10 items-stretch mb-12">
+            <div class="ios-glass p-8 rounded-[2rem] reveal-node">
+                <h4 class="font-bold text-white text-xl font-serif mb-6 border-b border-white/10 pb-4">Các thành phần hình học cốt lõi</h4>
+                <ul class="space-y-6">
+                    <li class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center border border-amber-500/40 shrink-0 text-amber-400 text-lg"><i class="fa-solid fa-expand"></i></div>
+                        <div>
+                            <strong class="text-white block mb-1">Vùng định vị (Position Detection)</strong>
+                            <span class="text-slate-400 text-sm">3 ô vuông lớn ở các góc. Giúp camera nhận diện mã tức lập tức và xác định đúng chiều (trên/dưới) để quét 360 độ chính xác.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-slate-700/50 rounded-xl flex items-center justify-center border border-slate-500/40 shrink-0 text-white text-lg"><i class="fa-solid fa-crop-simple"></i></div>
+                        <div>
+                            <strong class="text-white block mb-1">Vùng căn chỉnh (Alignment)</strong>
+                            <span class="text-slate-400 text-sm">Các ô vuông nhỏ rải rác bên trong. Tự động điều chỉnh và bù trừ sai lệch khi bề mặt in bị cong, vênh hoặc camera bị nghiêng.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-slate-700/50 rounded-xl flex items-center justify-center border border-slate-500/40 shrink-0 text-white text-lg"><i class="fa-solid fa-ruler-combined"></i></div>
+                        <div>
+                            <strong class="text-white block mb-1">Đường định thời (Timing Patterns)</strong>
+                            <span class="text-slate-400 text-sm">Các đường kẻ đen trắng xen kẽ nối liền ô định vị, giúp xác định kích thước ma trận và khoảng cách giữa các pixel dữ liệu.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-slate-700/50 rounded-xl flex items-center justify-center border border-slate-500/40 shrink-0 text-white text-lg"><i class="fa-solid fa-database"></i></div>
+                        <div>
+                            <strong class="text-white block mb-1">Vùng Version & Format + Dữ liệu</strong>
+                            <span class="text-slate-400 text-sm">Chứa thông tin mức sửa lỗi, loại mặt nạ, và toàn bộ không gian còn lại là thông tin giao dịch mã hóa nhị phân.</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="ios-glass p-8 rounded-[2rem] reveal-node space-y-6" style="animation-delay:0.1s">
+                <h4 class="font-bold text-white text-xl font-serif border-b border-white/10 pb-4">Thuật toán sửa lỗi Reed-Solomon</h4>
+                <p class="text-sm text-slate-300 leading-relaxed">Thuật toán toán học cho phép hệ thống tự động tính toán lại và khôi phục các dữ liệu bị mất hoặc biến dạng.</p>
+                <div class="space-y-5 mt-4">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="text-slate-400">Cấp độ L (Low)</span><span class="text-slate-300 font-bold">7% Phục hồi</span></div>
+                        <div class="progress-bar"><div class="progress-fill bg-slate-500" style="width:7%"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="text-blue-400 font-bold">Cấp độ M (Medium) - Thường dùng</span><span class="text-blue-400 font-bold">15% Phục hồi</span></div>
+                        <div class="progress-bar"><div class="progress-fill bg-blue-400" style="width:15%"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="text-amber-400 font-bold">Cấp độ Q (Quarter)</span><span class="text-amber-400 font-bold">25% Phục hồi</span></div>
+                        <div class="progress-bar"><div class="progress-fill bg-amber-400" style="width:25%"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="text-forest-neon font-bold">Cấp độ H (High)</span><span class="text-forest-neon font-bold">30% Phục hồi</span></div>
+                        <div class="progress-bar"><div class="progress-fill bg-forest-neon" style="width:30%"></div></div>
+                        <p class="text-xs text-slate-400 mt-3 leading-relaxed bg-white/5 p-3 rounded-lg border border-white/10"><i class="fa-solid fa-circle-info mr-1 text-forest-neon"></i> Nhờ cơ chế này, một mã QR bị rách góc, mờ mực in hay bám bẩn lên tới 30% diện tích, hệ thống ngân hàng vẫn đọc và xử lý chính xác mà không lệch dòng tiền.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ===== PHẦN 3: VẬN HÀNH HỆ THỐNG ===== -->
+<section id="phan-3" class="py-24 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center mb-16 reveal-node">
+            <span class="text-blue-400 font-mono tracking-[0.2em] uppercase text-xs border border-blue-400/30 px-4 py-1.5 rounded-full bg-blue-400/10">PHẦN 3: VẬN HÀNH HỆ THỐNG</span>
+            <h2 class="text-4xl md:text-5xl font-serif font-bold text-white mt-6 mb-4">Cơ Chế Sử Dụng & <span class="text-blue-400">Định Tuyến Backend</span></h2>
+            <p class="text-slate-400 max-w-2xl mx-auto text-lg">Từ góc độ trải nghiệm người dùng đến cấu trúc chuyển mạch mạng lưới dưới 3 giây.</p>
+        </div>
+
+        <!-- Static vs Dynamic Table -->
+        <div class="ios-glass rounded-[2rem] overflow-hidden reveal-node mb-12">
+            <div class="bg-white/5 p-6 border-b border-white/10">
+                <h4 class="font-bold text-white font-serif text-xl"><i class="fa-solid fa-code-compare text-blue-400 mr-3"></i> Phân loại mã QR: Tĩnh và Động</h4>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="premium-table">
+                    <thead><tr>
+                        <th class="w-[20%]">Đặc điểm</th>
+                        <th class="w-[40%] text-slate-300">Mã QR Tĩnh (Static)</th>
+                        <th class="w-[40%] text-forest-neon">Mã QR Động (Dynamic)</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-bold text-slate-400">Bản chất dữ liệu</td>
+                            <td>Cố định vĩnh viễn sau khi tạo.</td>
+                            <td>Có thể thay đổi thông tin liên kết bên trong.</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold text-slate-400">Thông tin chứa đựng</td>
+                            <td>Chỉ có thông tin tài khoản đích (Số TK, Ngân hàng).</td>
+                            <td>Bao gồm Số TK, <strong class="text-white">Số tiền chính xác</strong>, Mã hóa đơn riêng biệt.</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold text-slate-400">Trải nghiệm (UX)</td>
+                            <td>Người mua phải tự nhập số tiền cần chuyển.</td>
+                            <td>Người mua chỉ quét và bấm xác thực, không cần nhập gì thêm.</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold text-slate-400">Ghi nhận trạng thái</td>
+                            <td>Khó tự động hóa (Phải kiểm tra biến động số dư thủ công).</td>
+                            <td>Tự động hóa hoàn toàn (Hệ thống tự gạch nợ hóa đơn ngay lập tức).</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold text-slate-400">Ứng dụng thực tế</td>
+                            <td>Quầy tạp hóa, xe đẩy thức ăn, mã cá nhân.</td>
+                            <td>Website TMĐT, hóa đơn điện máy, vé máy bay, rạp phim.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- UX Flow & Backend -->
+        <div class="grid lg:grid-cols-2 gap-10 reveal-node mb-12">
+            <!-- UX Flow -->
+            <div class="ios-glass p-8 rounded-[2rem] border-t-2 border-t-blue-400">
+                <h4 class="text-xl font-bold text-white mb-6 font-serif">Trải nghiệm người dùng (UX Flow)</h4>
+                <p class="text-sm text-slate-400 mb-6">Nguyên lý dịch chuyển hành vi từ ngoại tuyến vào trực tuyến (Offline-to-Online) qua 5 bước tối giản:</p>
+                <div class="space-y-4">
+                    <div class="timeline-step">
+                        <strong class="text-white text-sm">BƯỚC 1: Tiếp cận</strong>
+                        <p class="text-xs text-slate-400">Khách hàng nhìn thấy mã QR tại quầy hoặc màn hình hóa đơn.</p>
+                    </div>
+                    <div class="timeline-step">
+                        <strong class="text-white text-sm">BƯỚC 2: Quét mã</strong>
+                        <p class="text-xs text-slate-400">Mở App ngân hàng/Ví điện tử, bật camera quét qua mã QR.</p>
+                    </div>
+                    <div class="timeline-step">
+                        <strong class="text-white text-sm">BƯỚC 3: Đối soát</strong>
+                        <p class="text-xs text-slate-400">Màn hình điện thoại hiển thị thông tin: Tên cửa hàng, Số tiền, Nội dung.</p>
+                    </div>
+                    <div class="timeline-step">
+                        <strong class="text-white text-sm">BƯỚC 4: Xác thực</strong>
+                        <p class="text-xs text-slate-400">Khách hàng nhập mã PIN hoặc quét FaceID / Vân tay.</p>
+                    </div>
+                    <div class="timeline-step">
+                        <strong class="text-forest-neon text-sm">BƯỚC 5: Kết thúc</strong>
+                        <p class="text-xs text-slate-400">Hệ thống báo thành công, dòng tiền luân chuyển ngay lập tức.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backend Infrastructure -->
+            <div class="ios-glass p-8 rounded-[2rem] border-t-2 border-t-forest-neon bg-gradient-to-b from-forest-neon/5 to-transparent">
+                <h4 class="text-xl font-bold text-white mb-6 font-serif">Vận hành Backend (Real-time)</h4>
+                <p class="text-sm text-slate-400 mb-6">Để giao dịch hoàn tất trong 2-3 giây, 5 thực thể liên kết chặt chẽ xử lý chuỗi lệnh:</p>
+                
+                <div class="flex items-center gap-3 mb-6 bg-black/40 p-3 rounded-lg border border-white/10 overflow-x-auto whitespace-nowrap text-xs font-mono text-slate-300">
+                    <span class="text-white">App Quét</span> ➔ <span class="text-blue-400">NH Phát Hành</span> ➔ <span class="text-forest-neon">NAPAS</span> ➔ <span class="text-amber-400">NH Tiếp Nhận</span> ➔ <span class="text-white">Người Bán</span>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                        <strong class="text-white text-xs block mb-1">1. Giai đoạn Đọc dữ liệu</strong>
+                        <p class="text-xs text-slate-400">App Người mua bóc tách chuỗi ký tự thô bên trong mã QR.</p>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                        <strong class="text-blue-400 text-xs block mb-1">2. Chuyển tiếp Lệnh (API Request)</strong>
+                        <p class="text-xs text-slate-400">Gửi lệnh có chữ ký số bảo mật lên NH của người mua.</p>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                        <strong class="text-forest-neon text-xs block mb-1">3. Trung chuyển Mạng lưới</strong>
+                        <p class="text-xs text-slate-400">NH phát hành kiểm tra số dư và chuyển dữ liệu qua Cổng thanh toán quốc gia (NAPAS).</p>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                        <strong class="text-amber-400 text-xs block mb-1">4. Định tuyến Đích</strong>
+                        <p class="text-xs text-slate-400">NAPAS nhận lệnh, xử lý và chuyển tiền đến NH của người bán.</p>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                        <strong class="text-white text-xs block mb-1">5. Hoàn tất & Đồng bộ số dư</strong>
+                        <p class="text-xs text-slate-400">NH tiếp nhận ghi có. Bắn tín hiệu (WebHook/API Response) về máy POS báo đơn hàng thành công.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VietQR Box -->
+        <div class="ios-glass p-8 rounded-3xl border-l-4 border-l-moon-glow reveal-node">
+            <h4 class="text-xl font-bold text-white mb-3 font-serif">Tiêu chuẩn quốc gia: Mô hình VietQR</h4>
+            <p class="text-slate-300 leading-relaxed mb-3">Trước đây, tình trạng cát cứ công nghệ xảy ra khi ngân hàng A không quét được mã QR của ngân hàng B. Để giải quyết, NHNN ban hành tiêu chuẩn <strong>VietQR</strong>.</p>
+            <p class="text-slate-300 leading-relaxed">Được xây dựng dựa trên tiêu chuẩn quốc tế <strong class="text-white">EMVCo</strong>. Việc này ép buộc tất cả các ngân hàng, ví điện tử phải đóng gói dữ liệu theo định dạng chuỗi ký tự (String) đồng nhất. Một mã VietQR duy nhất có thể chấp nhận tiền từ hơn 40 ngân hàng và hàng loạt ví điện tử, tạo tính liên thông toàn diện.</p>
+        </div>
+
+    </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ===== PHẦN 4: SINH MÃ VÀ TRIỂN KHAI ===== -->
+<section id="phan-4" class="py-24 relative bg-[#020617]">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_right_center,rgba(168,85,247,0.05),transparent_50%)]"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+        <div class="text-center mb-16 reveal-node">
+            <span class="text-purple-400 font-mono tracking-[0.2em] uppercase text-xs border border-purple-400/30 px-4 py-1.5 rounded-full bg-purple-400/10">PHẦN 4: THUẬT TOÁN & TRIỂN KHAI</span>
+            <h2 class="text-4xl md:text-5xl font-serif font-bold text-white mt-6 mb-4">Thuật Toán <span class="text-purple-400">Sinh Mã QR</span></h2>
+            <p class="text-slate-400 max-w-2xl mx-auto text-lg">Quá trình biến đổi thông tin tài khoản thành hình ảnh trải qua 5 chuỗi xử lý toán học nghiêm ngặt.</p>
+        </div>
+
+        <!-- 5 Steps -->
+        <div class="ios-glass p-10 rounded-[3rem] reveal-node relative overflow-hidden mb-12">
+            <div class="grid md:grid-cols-5 gap-6 relative z-10">
+                <div class="group">
+                    <div class="text-2xl font-black text-slate-700 mb-4 font-mono group-hover:text-purple-400 transition-colors">01</div>
+                    <div class="w-full h-1 bg-slate-800 mb-5 relative"><div class="absolute top-1/2 -translate-y-1/2 left-0 w-3 h-3 bg-purple-500 rounded-full shadow-[0_0_10px_#a855f7]"></div></div>
+                    <strong class="text-white block mb-2 text-sm uppercase">Chuẩn hóa dữ liệu thô</strong>
+                    <p class="text-xs text-slate-400 leading-relaxed">Tiếp nhận chuỗi thông tin định dạng chuẩn EMVCo, phân định bằng các ID (ID 38: TK nhận, ID 54: Số tiền).</p>
+                </div>
+                <div class="group">
+                    <div class="text-2xl font-black text-slate-700 mb-4 font-mono group-hover:text-purple-400 transition-colors">02</div>
+                    <div class="w-full h-1 bg-slate-800 mb-5 relative"><div class="absolute top-1/2 -translate-y-1/2 left-0 w-3 h-3 bg-blue-400 rounded-full shadow-[0_0_10px_#60a5fa]"></div></div>
+                    <strong class="text-white block mb-2 text-sm uppercase">Chuyển đổi nhị phân</strong>
+                    <p class="text-xs text-slate-400 leading-relaxed">Dịch chuỗi thành hệ nhị phân (0 và 1), thêm ký tự đặc biệt báo hiệu điểm bắt đầu và kết thúc.</p>
+                </div>
+                <div class="group">
+                    <div class="text-2xl font-black text-slate-700 mb-4 font-mono group-hover:text-purple-400 transition-colors">03</div>
+                    <div class="w-full h-1 bg-slate-800 mb-5 relative"><div class="absolute top-1/2 -translate-y-1/2 left-0 w-3 h-3 bg-forest-neon rounded-full shadow-[0_0_10px_#34d399]"></div></div>
+                    <strong class="text-white block mb-2 text-sm uppercase">Tính toán sửa lỗi</strong>
+                    <p class="text-xs text-slate-400 leading-relaxed">Áp dụng chia đa thức Reed-Solomon tạo ra các bit sửa lỗi, nối vào chuỗi dữ liệu gốc.</p>
+                </div>
+                <div class="group">
+                    <div class="text-2xl font-black text-slate-700 mb-4 font-mono group-hover:text-purple-400 transition-colors">04</div>
+                    <div class="w-full h-1 bg-slate-800 mb-5 relative"><div class="absolute top-1/2 -translate-y-1/2 left-0 w-3 h-3 bg-amber-400 rounded-full shadow-[0_0_10px_#fbbf24]"></div></div>
+                    <strong class="text-white block mb-2 text-sm uppercase">Thiết lập ma trận</strong>
+                    <p class="text-xs text-slate-400 leading-relaxed">Khởi tạo lưới (21x21 đến 177x177). Đặt cố định ô định vị trước, rồi điền bit dữ liệu vào ô trống theo chiều kim đồng hồ.</p>
+                </div>
+                <div class="group">
+                    <div class="text-2xl font-black text-purple-400 mb-4 font-mono drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]">05</div>
+                    <div class="w-full h-1 bg-gradient-to-r from-slate-800 to-purple-500 mb-5 relative"><div class="absolute top-1/2 -translate-y-1/2 right-0 w-4 h-4 bg-purple-400 rounded-full shadow-[0_0_15px_#a855f7] animate-pulse"></div></div>
+                    <strong class="text-white block mb-2 text-sm uppercase text-purple-400">Áp dụng Masking</strong>
+                    <p class="text-xs text-slate-300 font-medium leading-relaxed">Chạy 8 bộ lọc mặt nạ đảo ngược ngẫu nhiên ô đen trắng để tránh mảng đen/trắng quá lớn gây lóa mắt camera.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deployment -->
+        <div class="grid md:grid-cols-2 gap-8 reveal-node">
+            <div class="ios-glass p-8 rounded-3xl border border-white/5 bg-gradient-to-br from-white/5 to-transparent">
+                <h4 class="text-lg font-bold text-white mb-4 font-serif flex items-center gap-3"><i class="fa-solid fa-store text-slate-400"></i> Cá nhân & Hộ kinh doanh</h4>
+                <p class="text-sm text-slate-300 leading-relaxed mb-4">Quy trình tối giản qua App Mobile Banking. Người dùng vào mục "QR của tôi", hệ thống tự sinh mã QR tĩnh dạng ảnh PNG. Chỉ cần tải về, in giấy và dán tại quầy.</p>
+            </div>
+            <div class="ios-glass p-8 rounded-3xl border border-forest-neon/20 bg-gradient-to-br from-forest-neon/5 to-transparent">
+                <h4 class="text-lg font-bold text-white mb-4 font-serif flex items-center gap-3"><i class="fa-solid fa-building text-forest-neon"></i> Doanh nghiệp & TMĐT</h4>
+                <p class="text-sm text-slate-300 leading-relaxed mb-4">Triển khai Cổng API kết nối trực tiếp Ngân hàng/Trung gian. Nhấn "Thanh toán", backend gửi lệnh API. Hệ thống tự động sinh <strong>mã QR động</strong> thời gian thực, trả về hiển thị ngay trên màn hình.</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ===== PHẦN 5: ĐÁNH GIÁ VÀ TƯƠNG LAI ===== -->
+<section id="phan-5" class="py-24 relative bg-forest-dark border-t border-slate-800 overflow-hidden">
+    <div class="absolute -right-40 top-20 w-[500px] h-[500px] bg-amber-500/10 rounded-full filter blur-[100px] pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        <div class="text-center mb-16 reveal-node">
+            <span class="text-amber-500 font-mono tracking-widest uppercase text-xs border border-amber-500/30 px-4 py-1.5 rounded-full bg-amber-500/10">PHẦN 5: TỔNG KẾT & TRIỂN VỌNG</span>
+            <h2 class="text-4xl md:text-5xl font-serif font-bold text-white mt-6 mb-4">Đánh Giá Ưu Điểm & <span class="text-gradient-amber">Rủi Ro</span></h2>
+            <p class="text-slate-400 max-w-2xl mx-auto text-lg">Phân tích đa chiều về lợi thế tuyệt đối và các thách thức bảo mật của hệ thống thanh toán mở.</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 reveal-node mb-12">
+            <!-- Ưu điểm -->
+            <div class="ios-glass p-8 rounded-3xl border-t-2 border-t-forest-neon">
+                <h4 class="text-xl font-bold text-white mb-5 font-serif"><i class="fa-solid fa-star text-forest-neon mr-2"></i> Ưu Điểm Vượt Trội</h4>
+                <ul class="space-y-4">
+                    <li class="bg-forest-neon/5 p-4 rounded-xl border border-forest-neon/20">
+                        <strong class="text-white block mb-1 text-sm">Chi phí đầu tư bằng không</strong>
+                        <span class="text-slate-400 text-xs">Không cần mua/thuê máy POS, chỉ cần một tờ giấy in mã QR giá vài nghìn đồng.</span>
+                    </li>
+                    <li class="bg-forest-neon/5 p-4 rounded-xl border border-forest-neon/20">
+                        <strong class="text-white block mb-1 text-sm">Tốc độ & Chính xác</strong>
+                        <span class="text-slate-400 text-xs">Loại bỏ rủi ro chuyển nhầm do nhập tay. Giao dịch tính bằng giây.</span>
+                    </li>
+                    <li class="bg-forest-neon/5 p-4 rounded-xl border border-forest-neon/20">
+                        <strong class="text-white block mb-1 text-sm">Mở rộng không giới hạn</strong>
+                        <span class="text-slate-400 text-xs">Hiển thị trên mọi chất liệu: giấy in, màn hình, hóa đơn điện nước tại nhà.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Rủi ro -->
+            <div class="ios-glass p-8 rounded-3xl border-t-2 border-t-red-500">
+                <h4 class="text-xl font-bold text-white mb-5 font-serif"><i class="fa-solid fa-triangle-exclamation text-red-400 mr-2"></i> Rủi Ro Bảo Mật</h4>
+                <ul class="space-y-4">
+                    <li class="bg-red-500/5 p-4 rounded-xl border border-red-500/20">
+                        <strong class="text-white block mb-1 text-sm">Tấn công dán đè (QR Tampering)</strong>
+                        <span class="text-slate-400 text-xs">Kẻ gian dán đè đề-can chứa mã giả lên mã thật. Tiền chạy thẳng vào túi lừa đảo mà chủ quán không biết.</span>
+                    </li>
+                    <li class="bg-red-500/5 p-4 rounded-xl border border-red-500/20">
+                        <strong class="text-white block mb-1 text-sm">Tấn công Phishing</strong>
+                        <span class="text-slate-400 text-xs">Mã QR mã hóa URL độc hại giả mạo trúng thưởng để chiếm đoạt tài khoản hoặc tải mã độc.</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Giải pháp & Tương lai -->
+            <div class="ios-glass p-8 rounded-3xl border-t-2 border-t-amber-500 bg-gradient-to-br from-amber-500/5 to-transparent">
+                <h4 class="text-xl font-bold text-white mb-5 font-serif"><i class="fa-solid fa-shield text-amber-400 mr-2"></i> Giải Pháp & Xu Hướng</h4>
+                <ul class="space-y-4">
+                    <li class="bg-white/5 p-4 rounded-xl border border-white/10">
+                        <strong class="text-white block mb-1 text-sm">Biện pháp phòng chống</strong>
+                        <span class="text-slate-400 text-xs">Cửa hàng chuyển sang dùng màn hình (SmartPOS) hiển thị mã động. App ngân hàng tích hợp bộ lọc chặn URL độc hại ngoài chuẩn EMVCo.</span>
+                    </li>
+                    <li class="bg-amber-500/10 p-4 rounded-xl border border-amber-500/30 shadow-[0_0_15px_rgba(251,191,36,0.1)]">
+                        <strong class="text-amber-400 block mb-1 text-sm">Thanh toán Xuyên biên giới</strong>
+                        <span class="text-slate-300 text-xs">VN đã kết nối với Thái Lan, Campuchia. Du lịch chỉ cần mở App nội địa quét QR nước bạn, hệ thống tự quy đổi tỷ giá. Hạ tầng cốt lõi tương lai.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-black py-12 text-center border-t border-white/10">
+    <div class="flex justify-center items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-full bg-forest-neon flex items-center justify-center"><i class="fa-solid fa-qrcode text-forest-dark text-lg"></i></div>
+        <span class="font-serif font-bold text-2xl text-white">QR<span class="text-forest-neon">Tech</span> Report</span>
+    </div>
+    <p class="text-slate-400 font-medium text-sm mb-6 max-w-2xl mx-auto px-4">Bài luận nghiên cứu sâu từ nền tảng lý thuyết đến cơ chế vận hành hệ sinh thái thanh toán điện tử.</p>
+    
+    <div class="max-w-md mx-auto px-4">
+        <div class="bg-white/5 rounded-xl p-4 border border-white/10 flex flex-col items-center">
+            <span class="text-xs font-mono text-moon-glow uppercase tracking-widest mb-1">Môn Học / Chủ Đề</span>
+            <strong class="text-white text-sm">Công Nghệ QR Code Trong Thanh Toán Điện Tử</strong>
+            <span class="text-xs text-slate-500 mt-1">Giao diện thuyết trình tự động</span>
+        </div>
+    </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        const o = document.getElementById('intro-overlay');
+        if(o){o.style.opacity='0'; setTimeout(()=>o.style.display='none',2000);}
+    }, 500);
+
+    window.addEventListener('scroll', () => {
+        const ws = document.body.scrollTop || document.documentElement.scrollTop;
+        const h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        document.getElementById('scroll-progress').style.width = (ws/h*100)+'%';
+        const nav = document.getElementById('navbar');
+        nav.classList.toggle('py-3', ws>50); nav.classList.toggle('py-6', ws<=50);
+    });
+
+    const eOut = x => x===1?1:1-Math.pow(2,-10*x);
+    function countUp(el){
+        const t = parseFloat(el.getAttribute('data-target')), dur = 2500, start = performance.now();
+        const isDecimal = t % 1 !== 0;
+        const upd = now => {
+            const p = Math.min((now-start)/dur, 1), cur = t*eOut(p);
+            el.innerText = cur.toLocaleString('vi-VN', {
+                minimumFractionDigits: isDecimal ? 1 : 0, 
+                maximumFractionDigits: isDecimal ? 1 : 0
+            });
+            if(p<1) requestAnimationFrame(upd);
+        }; 
+        requestAnimationFrame(upd);
+    }
+
+    const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if(e.isIntersecting){
+                e.target.classList.add('active');
+                e.target.querySelectorAll('.counter').forEach(c=>{
+                    if(!c.classList.contains('counted')){ countUp(c); c.classList.add('counted'); }
+                });
+                obs.unobserve(e.target);
+            }
+        });
+    },{threshold:0.1, rootMargin:'0px 0px -50px 0px'});
+    document.querySelectorAll('.reveal-node').forEach(el=>obs.observe(el));
+
+    const pbObs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if(e.isIntersecting){
+                e.target.querySelectorAll('.progress-fill').forEach(b=>{
+                    const w = b.style.width; b.style.width='0';
+                    setTimeout(()=>b.style.width=w, 100);
+                });
+                pbObs.unobserve(e.target);
+            }
+        });
+    },{threshold:0.3});
+    document.querySelectorAll('.ios-glass').forEach(el=>pbObs.observe(el));
+});
+</script>
+</body>
+</html>
